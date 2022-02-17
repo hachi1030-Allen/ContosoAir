@@ -9,7 +9,7 @@ trigger:
 resources:
   pipelines:
     - pipeline: buildContosoAir
-      source: hachi1030-Allen.ContosoAir
+      source: hachi1030-Allen.ContosoAir-CI
       trigger:
        branches:
          include:
