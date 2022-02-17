@@ -1,0 +1,48 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- none
+
+resources:
+  pipelines:
+    - pipeline: buildContosoAir
+      source: mpieler1.ContosoAir
+      trigger:
+       branches:
+         include:
+           - master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: DownloadPipelineArtifact@2
+  inputs:
+    buildType: 'specific'
+    project: '84c6af49-0036-426a-9d6e-b8031ee75fc6'
+    definition: '3'
+    buildVersionToDownload: 'latest'
+    targetPath: '$(Pipeline.Workspace)'
+- task: AzureResourceManagerTemplateDeployment@3
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: 'Azure Connection'
+    subscriptionId: '903505fa-996b-4c82-929b-d4a0247dc772'
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: '$(resourcegroup)'
+    location: 'East Asia'
+    templateLocation: 'Linked artifact'
+    csmFile: '$(Pipeline.Workspace)/drop/Templates/azuredeploy.json'
+    csmParametersFile: '$(Pipeline.Workspace)/drop/Templates/azuredeploy.parameters.json'
+    overrideParameters: '-p_environment $(web_environment) -p_site_prefix $(web_prefix) -p_site_web_name $(web_site)'
+    deploymentMode: 'Incremental'
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'Azure Connection'
+    appType: 'webApp'
+    WebAppName: '$(web_prefix)-$(web_site)-$(web_environment)'
+    packageForLinux: '$(Pipeline.Workspace)/**/*.zip'
